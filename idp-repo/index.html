@@ -89,7 +89,13 @@
     padding: 6px; border: 1px solid var(--border); border-radius: 3px;
     color: var(--text); background: #fff; margin-top: 2px;
   }
-  .custom-ref .tgt-input { max-width: 120px; }
+  /* weight (% of Target) input — used on both preset and custom KRA rows */
+  .tgt-input {
+    width: 100%; max-width: 120px; font-family: inherit; font-size: 13px; font-weight: 600;
+    padding: 6px; border: 1px solid var(--border); border-radius: 3px;
+    color: var(--text); background: #fff; margin-top: 2px;
+  }
+  .tgt-input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
   .add-btn {
     display: inline-block; margin: 4px 0 20px; padding: 8px 16px;
     background: #fff; color: var(--accent); border: 1px dashed var(--accent);
@@ -102,6 +108,24 @@
     cursor: pointer; font-size: 12px; font-weight: 600; padding: 0;
   }
 
+  /* running total of KRA/KPI weights — must equal 100%; only shown once it's correct */
+  .weight-total {
+    margin: 4px 0 20px; padding: 10px 14px; border-radius: 3px;
+    font-size: 13px; font-weight: 700;
+  }
+  .weight-total.weight-ok { background: #eafbea; color: #187a18; border: 1px solid #187a18; }
+
+  /* top-right toast for weight errors */
+  #toast {
+    position: fixed; top: 20px; right: 20px; z-index: 1000;
+    max-width: 320px; padding: 14px 18px; border-radius: 4px;
+    font-size: 13px; font-weight: 700; background: #fdeaea; color: #b00;
+    border: 1px solid #b00; box-shadow: 0 4px 14px rgba(0,0,0,.18);
+    opacity: 0; transform: translateY(-10px); pointer-events: none;
+    transition: opacity .2s ease, transform .2s ease;
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+
   .actions { margin-top: 40px; text-align: right; }
   button {
     font-family: inherit; font-size: 14px; padding: 10px 24px;
@@ -113,6 +137,7 @@
 </style>
 </head>
 <body>
+<div id="toast"></div>
 <div class="sheet">
 
   <header>
@@ -153,8 +178,29 @@ const RATING_CHOICES = ["Exceeds Expectations (3)", "Meets Expectations (2)", "B
 
 // ---- DATA MODEL: now keyed by ROLE. Each role has its own question set. ----
 // Placeholder roles for now — swap in real Project Y content (or a DB fetch) later.
-const ROLES = {
-  "Role #1": {
+// Role list below is per the Project Y org roster. The roster listed "Associate" three
+// times with no department/team given to tell them apart, and role names double as the
+// keys of this object, so duplicates would just overwrite each other — only one generic
+// "Associate" entry is kept. If the three should stay distinct, rename them (e.g.
+// "Associate, Finance") and duplicate the "Associate" block below for each.
+const ROLE_NAMES = [
+  "BD Associate",
+  "CB Operations Manager",
+  "Finance Lead",
+  "Finance Assistant",
+  "Multimedia Designer",
+  "Marketing Communications Lead",
+  "Marketing Analyst",
+  "President & CEO",
+  "Operations Manager",
+  "Lead, Project Support",
+  "Associate",
+  "Operations Assistant",
+  "People & Culture Manager"
+];
+
+function makeRolePlaceholder(roleName) {
+  return {
     "PART 1: GOALS / KRA / KPI": {
       refFields: [
         ["Key Result Area (KRA) & KPI", "kra"],
@@ -163,9 +209,9 @@ const ROLES = {
         ["Critical Competencies to Develop", "comp"]
       ],
       rows: [
-        { kra:"[Role #1] KRA placeholder 1\nKPI: placeholder KPI text", tgt:"25%",
+        { kra:"[" + roleName + "] KRA placeholder 1\nKPI: placeholder KPI text", tgt:"25%",
           mile:"Milestone placeholder 1", comp:"Competency placeholder 1" },
-        { kra:"[Role #1] KRA placeholder 2\nKPI: placeholder KPI text", tgt:"30%",
+        { kra:"[" + roleName + "] KRA placeholder 2\nKPI: placeholder KPI text", tgt:"30%",
           mile:"Milestone placeholder 2", comp:"Competency placeholder 2" }
       ]
     },
@@ -177,9 +223,9 @@ const ROLES = {
         ["Development Plan", "dev"]
       ],
       rows: [
-        { cat:"[Role #1] Sub-competency placeholder 1", cur:"Intermediate", tgt:"Expert",
+        { cat:"[" + roleName + "] Sub-competency placeholder 1", cur:"Intermediate", tgt:"Expert",
           dev:"Development plan placeholder" },
-        { cat:"[Role #1] Sub-competency placeholder 2", cur:"Proficient", tgt:"Expert",
+        { cat:"[" + roleName + "] Sub-competency placeholder 2", cur:"Proficient", tgt:"Expert",
           dev:"Development plan placeholder" }
       ]
     },
@@ -194,86 +240,11 @@ const ROLES = {
         { val:"VALUE PLACEHOLDER B", dim:"Dimension placeholder", goal:"Goal placeholder" }
       ]
     }
-  },
+  };
+}
 
-  "Role #2": {
-    "PART 1: GOALS / KRA / KPI": {
-      refFields: [
-        ["Key Result Area (KRA) & KPI", "kra"],
-        ["% of Target", "tgt"],
-        ["Milestones / Projects", "mile"],
-        ["Critical Competencies to Develop", "comp"]
-      ],
-      rows: [
-        { kra:"[Role #2] KRA placeholder 1\nKPI: placeholder KPI text", tgt:"40%",
-          mile:"Milestone placeholder 1", comp:"Competency placeholder 1" }
-      ]
-    },
-    "PART 2: COMPETENCIES": {
-      refFields: [
-        ["Category, Competency & Sub-competency", "cat"],
-        ["Current Proficiency Level", "cur"],
-        ["Target Proficiency Level", "tgt"],
-        ["Development Plan", "dev"]
-      ],
-      rows: [
-        { cat:"[Role #2] Sub-competency placeholder 1", cur:"Basic", tgt:"Proficient",
-          dev:"Development plan placeholder" }
-      ]
-    },
-    "PART 3: VALUES": {
-      refFields: [
-        ["Value", "val"],
-        ["Dimension", "dim"],
-        ["Goal for the Year", "goal"]
-      ],
-      rows: [
-        { val:"VALUE PLACEHOLDER A", dim:"Dimension placeholder", goal:"Goal placeholder" }
-      ]
-    }
-  },
-
-  "Role #3": {
-    "PART 1: GOALS / KRA / KPI": {
-      refFields: [
-        ["Key Result Area (KRA) & KPI", "kra"],
-        ["% of Target", "tgt"],
-        ["Milestones / Projects", "mile"],
-        ["Critical Competencies to Develop", "comp"]
-      ],
-      rows: [
-        { kra:"[Role #3] KRA placeholder 1\nKPI: placeholder KPI text", tgt:"20%",
-          mile:"Milestone placeholder 1", comp:"Competency placeholder 1" },
-        { kra:"[Role #3] KRA placeholder 2\nKPI: placeholder KPI text", tgt:"20%",
-          mile:"Milestone placeholder 2", comp:"Competency placeholder 2" },
-        { kra:"[Role #3] KRA placeholder 3\nKPI: placeholder KPI text", tgt:"15%",
-          mile:"Milestone placeholder 3", comp:"Competency placeholder 3" }
-      ]
-    },
-    "PART 2: COMPETENCIES": {
-      refFields: [
-        ["Category, Competency & Sub-competency", "cat"],
-        ["Current Proficiency Level", "cur"],
-        ["Target Proficiency Level", "tgt"],
-        ["Development Plan", "dev"]
-      ],
-      rows: [
-        { cat:"[Role #3] Sub-competency placeholder 1", cur:"Intermediate", tgt:"Expert",
-          dev:"Development plan placeholder" }
-      ]
-    },
-    "PART 3: VALUES": {
-      refFields: [
-        ["Value", "val"],
-        ["Dimension", "dim"],
-        ["Goal for the Year", "goal"]
-      ],
-      rows: [
-        { val:"VALUE PLACEHOLDER A", dim:"Dimension placeholder", goal:"Goal placeholder" }
-      ]
-    }
-  }
-};
+const ROLES = {};
+ROLE_NAMES.forEach(roleName => { ROLES[roleName] = makeRolePlaceholder(roleName); });
 
 // ---- Populate the role dropdown from the ROLES keys ----
 const roleSelect = document.getElementById("roleSelect");
@@ -333,8 +304,14 @@ function renderRole(keepCustom) {
       wrap.className = "row";
       let refHTML = `<div class="rownum">Item ${rIdx + 1}</div>`;
       part.refFields.forEach(([label, key]) => {
-        refHTML += `<div class="field"><label>${label}</label>
-          <div class="val">${row[key] || "—"}</div></div>`;
+        if (partName === "PART 1: GOALS / KRA / KPI" && key === "tgt") {
+          refHTML += `<div class="field"><label>${label}</label>
+            <input class="tgt-input" id="kra_wt_${rIdx}" value="${row[key] || ""}"
+              placeholder="e.g. 25%" oninput="updateWeightTotal()"></div>`;
+        } else {
+          refHTML += `<div class="field"><label>${label}</label>
+            <div class="val">${row[key] || "—"}</div></div>`;
+        }
       });
       const ref = document.createElement("div");
       ref.className = "row-ref";
@@ -370,7 +347,8 @@ function renderRole(keepCustom) {
           <div class="field"><label>Key Result Area (KRA) &amp; KPI</label>
             <textarea id="custom_${i}_kra" placeholder="Describe the KRA and its KPI(s)...">${crow.kra || ""}</textarea></div>
           <div class="field"><label>% of Target</label>
-            <input class="tgt-input" id="custom_${i}_tgt" value="${crow.tgt || ""}" placeholder="e.g. 10%"></div>
+            <input class="tgt-input" id="custom_${i}_tgt" value="${crow.tgt || ""}" placeholder="e.g. 10%"
+              oninput="updateWeightTotal()"></div>
           <div class="field"><label>Milestones / Projects</label>
             <textarea id="custom_${i}_mile" placeholder="Milestones...">${crow.mile || ""}</textarea></div>
           <div class="field"><label>Critical Competencies to Develop</label>
@@ -397,9 +375,70 @@ function renderRole(keepCustom) {
       addBtn.textContent = "+ Add custom KRA / KPI";
       addBtn.onclick = () => { saveCustomInputs(); addCustomRow(); };
       container.appendChild(addBtn);
+
+      const totalEl = document.createElement("div");
+      totalEl.id = "weightTotal";
+      totalEl.className = "weight-total";
+      container.appendChild(totalEl);
     }
   });
+
+  updateWeightTotal();
 }
+
+// ---- Weight (% of Target) tracking — all Part 1 KRA/KPI weights must sum to 100 ----
+function parseWeight(v) {
+  const n = parseFloat(String(v).replace("%", "").trim());
+  return isNaN(n) ? 0 : n;
+}
+function sumPart1Weights() {
+  const roleName = roleSelect.value;
+  if (!roleName) return 0;
+  let total = 0;
+  ROLES[roleName]["PART 1: GOALS / KRA / KPI"].rows.forEach((row, rIdx) => {
+    const el = document.getElementById(`kra_wt_${rIdx}`);
+    if (el) total += parseWeight(el.value);
+  });
+  customRows.forEach((crow, i) => {
+    const el = document.getElementById(`custom_${i}_tgt`);
+    if (el) total += parseWeight(el.value);
+  });
+  return Math.round(total * 100) / 100;   // trim floating-point noise
+}
+function updateWeightTotal() {
+  const el = document.getElementById("weightTotal");
+  if (!el) return true;
+  const total = sumPart1Weights();
+  const ok = total === 100;
+  if (ok) {
+    el.textContent = `✓ KRA/KPI weights total ${total}%`;
+    el.classList.add("weight-ok");
+    el.style.display = "inline-block";
+  } else {
+    el.textContent = "";
+    el.classList.remove("weight-ok");
+    el.style.display = "none";
+  }
+  return ok;
+}
+
+// ---- Toast: pop up top-right when weights don't add up ----
+let toastTimer = null;
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 4000);
+}
+// fires when the user leaves a weight field (not on every keystroke)
+document.getElementById("parts").addEventListener("focusout", (e) => {
+  if (!e.target.classList || !e.target.classList.contains("tgt-input")) return;
+  const total = sumPart1Weights();
+  if (total !== 100) {
+    showToast(`KRA/KPI weights total ${total}% — must add up to exactly 100%`);
+  }
+});
 
 // ---- COLLECT + BUILD FILLABLE PDF ----
 async function collect() {
@@ -418,17 +457,29 @@ async function collect() {
 
   saveCustomInputs();   // capture latest custom field text
 
+  const weightTotal = sumPart1Weights();
+  if (weightTotal !== 100) {
+    alert(`KRA/KPI weights must add up to exactly 100% before you can generate the PDF (currently ${weightTotal}%).`);
+    document.getElementById("weightTotal")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+
   const DATA = ROLES[roleName];
   const out = [];
   Object.entries(DATA).forEach(([partName, part], pIdx) => {
     part.rows.forEach((row, rIdx) => {
       const id = `p${pIdx}_r${rIdx}`;
+      let ref = row;
+      if (partName === "PART 1: GOALS / KRA / KPI") {
+        const wtEl = document.getElementById(`kra_wt_${rIdx}`);
+        ref = { ...row, tgt: wtEl ? wtEl.value : row.tgt };
+      }
       out.push({
         part: partName,
         item: rIdx + 1,
         rating: document.getElementById(`${id}_rate`).value,
         comment: document.getElementById(`${id}_cmt`).value,
-        ref: row,
+        ref: ref,
         refFields: part.refFields
       });
     });

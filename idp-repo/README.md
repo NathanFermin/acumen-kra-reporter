@@ -1,5 +1,7 @@
 # IDP — Individual Development Plan Tool
 
+Lucky me!
+
 A single-page tool for Acumen's Year End Review. An employee picks a role,
 fills in their self-assessment (ratings + comments), and generates a
 fillable PDF where the supervisor can add their own ratings and comments.
