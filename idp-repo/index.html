@@ -84,11 +84,21 @@
 
   /* custom KRA/KPI row */
   .custom-ref { background: #eef8fc; }
-  .custom-ref input, .custom-ref textarea {
+  .custom-ref input, .custom-ref textarea, .custom-ref select {
     width: 100%; font-family: inherit; font-size: 13px; font-weight: 600;
     padding: 6px; border: 1px solid var(--border); border-radius: 3px;
     color: var(--text); background: #fff; margin-top: 2px;
   }
+  .kra-hint {
+    margin-top: 8px; padding: 10px 12px; border: 1px solid var(--accent);
+    border-left: 4px solid var(--accent); border-radius: 3px; background: #fff;
+    font-size: 12.5px; font-weight: 400; color: #333; line-height: 1.5;
+  }
+  .kra-hint .kra-hint-top {
+    font-weight: 700; color: var(--accent); text-transform: uppercase;
+    font-size: 11px; letter-spacing: .3px; margin-bottom: 4px;
+  }
+  .kra-hint .kra-hint-def { white-space: pre-line; }
   /* weight (% of Target) input — used on both preset and custom KRA rows */
   .tgt-input {
     width: 100%; max-width: 120px; font-family: inherit; font-size: 13px; font-weight: 600;
@@ -176,8 +186,473 @@ const RATINGS = [
 ];
 const RATING_CHOICES = ["Exceeds Expectations (3)", "Meets Expectations (2)", "Below Expectations (1)"];
 
+// ---- KRA LIBRARY: sourced from the Project Y Competency Model workbook. ----
+// Each role maps to the Sub-competency Name rows of its matching Functional sheet/column
+// (e.g. BD Associate -> BD Mktg Functional -> "BD/Mktg Associate" column). These become the
+// selectable KRA options for that role in Part 1; the KPI itself stays free-text/user input.
+// A couple of roles share the same list because they map to the same generic band ladder
+// (CB Functional) — see README for the full role -> sheet/column mapping.
+const KRA_LIBRARY = {
+  "BD Associate": [
+    {
+      "competency": "Lead Generation & Business Development",
+      "kra": "Business Development Expertise",
+      "definition": "Understands the approaches and practices required for identifying and capitalizing on business and commercial opportunities",
+      "level": "Intermediate"
+    },
+    {
+      "competency": "Lead Generation & Business Development",
+      "kra": "BD Process Governance",
+      "definition": null,
+      "level": "Proficient"
+    },
+    {
+      "competency": "Lead Generation & Business Development",
+      "kra": "Marketing Communications",
+      "definition": "Is aware and can make the most of relevant online and offline marketing communications platforms to support the demand generation efforts",
+      "level": "Proficient"
+    }
+  ],
+  "Marketing Communications Lead": [
+    {
+      "competency": "Lead Generation & Business Development",
+      "kra": "Business Development Expertise",
+      "definition": "Understands the approaches and practices required for identifying and capitalizing on business and commercial opportunities",
+      "level": "Proficient"
+    },
+    {
+      "competency": "Lead Generation & Business Development",
+      "kra": "BD Process Governance",
+      "definition": null,
+      "level": "Expert"
+    },
+    {
+      "competency": "Lead Generation & Business Development",
+      "kra": "Marketing Communications",
+      "definition": "Is aware and can make the most of relevant online and offline marketing communications platforms to support the demand generation efforts",
+      "level": "Proficient"
+    }
+  ],
+  "CB Operations Manager": [
+    {
+      "competency": "L&D Acumen",
+      "kra": "Diagnostic",
+      "definition": "Ability to apply the methods, techniques and tools used to analyze team and individual performance used as input to training design.  \nUsing needs assessments and evaluative information, \nConsultation, or the ability to identify and provide guidance to stakeholders by listening to their needs and identifying processes to address them.\nAbility to develop a diagnostic questionnaire, designing the right questions, in consideration of the client issues of reliability and validity.",
+      "level": "Proficient"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Training Design",
+      "definition": "Ability to develop and deliver learning solutions that meet business needs. ability to apply concepts, principles and practices related to planning, evaluating and administering training, organizational development and initiatives.\nAble to clearly articulate the learning objectives and draft the major topics to be covered\nDesigns/develops instructional strategies and instructor guidelines.",
+      "level": "Proficient"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Content Development",
+      "definition": "Ability to develop existing instructional materials creating structure & flow, customizing concepts to meaningful client content including case studies and training examples. Collaborates and interacts with a variety of stakeholders (i.e. SMEs, Content Manager, Faculty) to meet the goals of the content design. Able to develop content in consideration of how people learn best through knowledge of learning principles.",
+      "level": "Proficient"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Training Implementation",
+      "definition": "Sub-competency 4 definition",
+      "level": "Proficient"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Measuring and documenting Program effectiveness",
+      "definition": "Effectively measures how the training objectives were met.  Review the performance of the participants.",
+      "level": "Proficient"
+    }
+  ],
+  "President & CEO": [
+    {
+      "competency": "L&D Acumen",
+      "kra": "Diagnostic",
+      "definition": "Ability to apply the methods, techniques and tools used to analyze team and individual performance used as input to training design.  \nUsing needs assessments and evaluative information, \nConsultation, or the ability to identify and provide guidance to stakeholders by listening to their needs and identifying processes to address them.\nAbility to develop a diagnostic questionnaire, designing the right questions, in consideration of the client issues of reliability and validity.",
+      "level": "Expert"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Training Design",
+      "definition": "Ability to develop and deliver learning solutions that meet business needs. ability to apply concepts, principles and practices related to planning, evaluating and administering training, organizational development and initiatives.\nAble to clearly articulate the learning objectives and draft the major topics to be covered\nDesigns/develops instructional strategies and instructor guidelines.",
+      "level": "Expert"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Content Development",
+      "definition": "Ability to develop existing instructional materials creating structure & flow, customizing concepts to meaningful client content including case studies and training examples. Collaborates and interacts with a variety of stakeholders (i.e. SMEs, Content Manager, Faculty) to meet the goals of the content design. Able to develop content in consideration of how people learn best through knowledge of learning principles.",
+      "level": "Expert"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Training Implementation",
+      "definition": "Sub-competency 4 definition",
+      "level": "Expert"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Measuring and documenting Program effectiveness",
+      "definition": "Effectively measures how the training objectives were met.  Review the performance of the participants.",
+      "level": "Expert"
+    }
+  ],
+  "Operations Manager": [
+    {
+      "competency": "L&D Acumen",
+      "kra": "Diagnostic",
+      "definition": "Ability to apply the methods, techniques and tools used to analyze team and individual performance used as input to training design.  \nUsing needs assessments and evaluative information, \nConsultation, or the ability to identify and provide guidance to stakeholders by listening to their needs and identifying processes to address them.\nAbility to develop a diagnostic questionnaire, designing the right questions, in consideration of the client issues of reliability and validity.",
+      "level": "Expert"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Training Design",
+      "definition": "Ability to develop and deliver learning solutions that meet business needs. ability to apply concepts, principles and practices related to planning, evaluating and administering training, organizational development and initiatives.\nAble to clearly articulate the learning objectives and draft the major topics to be covered\nDesigns/develops instructional strategies and instructor guidelines.",
+      "level": "Expert"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Content Development",
+      "definition": "Ability to develop existing instructional materials creating structure & flow, customizing concepts to meaningful client content including case studies and training examples. Collaborates and interacts with a variety of stakeholders (i.e. SMEs, Content Manager, Faculty) to meet the goals of the content design. Able to develop content in consideration of how people learn best through knowledge of learning principles.",
+      "level": "Expert"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Training Implementation",
+      "definition": "Sub-competency 4 definition",
+      "level": "Expert"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Measuring and documenting Program effectiveness",
+      "definition": "Effectively measures how the training objectives were met.  Review the performance of the participants.",
+      "level": "Expert"
+    }
+  ],
+  "Lead, Project Support": [],
+  "Associate": [
+    {
+      "competency": "L&D Acumen",
+      "kra": "Diagnostic",
+      "definition": "Ability to apply the methods, techniques and tools used to analyze team and individual performance used as input to training design.  \nUsing needs assessments and evaluative information, \nConsultation, or the ability to identify and provide guidance to stakeholders by listening to their needs and identifying processes to address them.\nAbility to develop a diagnostic questionnaire, designing the right questions, in consideration of the client issues of reliability and validity.",
+      "level": "Intermediate"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Training Design",
+      "definition": "Ability to develop and deliver learning solutions that meet business needs. ability to apply concepts, principles and practices related to planning, evaluating and administering training, organizational development and initiatives.\nAble to clearly articulate the learning objectives and draft the major topics to be covered\nDesigns/develops instructional strategies and instructor guidelines.",
+      "level": "Intermediate"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Content Development",
+      "definition": "Ability to develop existing instructional materials creating structure & flow, customizing concepts to meaningful client content including case studies and training examples. Collaborates and interacts with a variety of stakeholders (i.e. SMEs, Content Manager, Faculty) to meet the goals of the content design. Able to develop content in consideration of how people learn best through knowledge of learning principles.",
+      "level": "Intermediate"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Training Implementation",
+      "definition": "Sub-competency 4 definition",
+      "level": "Intermediate"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Measuring and documenting Program effectiveness",
+      "definition": "Effectively measures how the training objectives were met.  Review the performance of the participants.",
+      "level": "Intermediate"
+    }
+  ],
+  "Operations Assistant": [
+    {
+      "competency": "L&D Acumen",
+      "kra": "Diagnostic",
+      "definition": "Ability to apply the methods, techniques and tools used to analyze team and individual performance used as input to training design.  \nUsing needs assessments and evaluative information, \nConsultation, or the ability to identify and provide guidance to stakeholders by listening to their needs and identifying processes to address them.\nAbility to develop a diagnostic questionnaire, designing the right questions, in consideration of the client issues of reliability and validity.",
+      "level": "Basic"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Training Design",
+      "definition": "Ability to develop and deliver learning solutions that meet business needs. ability to apply concepts, principles and practices related to planning, evaluating and administering training, organizational development and initiatives.\nAble to clearly articulate the learning objectives and draft the major topics to be covered\nDesigns/develops instructional strategies and instructor guidelines.",
+      "level": "Basic"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Content Development",
+      "definition": "Ability to develop existing instructional materials creating structure & flow, customizing concepts to meaningful client content including case studies and training examples. Collaborates and interacts with a variety of stakeholders (i.e. SMEs, Content Manager, Faculty) to meet the goals of the content design. Able to develop content in consideration of how people learn best through knowledge of learning principles.",
+      "level": "Basic"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Training Implementation",
+      "definition": "Sub-competency 4 definition",
+      "level": "Basic"
+    },
+    {
+      "competency": "L&D Acumen",
+      "kra": "Measuring and documenting Program effectiveness",
+      "definition": "Effectively measures how the training objectives were met.  Review the performance of the participants.",
+      "level": "Basic"
+    }
+  ],
+  "Finance Lead": [
+    {
+      "competency": "Financial Management and Stewardship\n(Leadership and Finance Functional Competency)",
+      "kra": "Planning, forecasting and budgeting",
+      "definition": "The ability to translate business strategies into a financial plan, to include defining the right strategies for price, direct and indirect costs, and capital investments.",
+      "level": "Expert"
+    },
+    {
+      "competency": "Financial Management and Stewardship\n(Leadership and Finance Functional Competency)",
+      "kra": "Financial Analysis and Performance Management",
+      "definition": "The ability to analyze financial statements to generate insights about how to manage the financial results of the company:  revenue, profitability and shareholder returns.",
+      "level": "Expert"
+    },
+    {
+      "competency": "Financial Management and Stewardship\n(Leadership and Finance Functional Competency)",
+      "kra": "Cost management",
+      "definition": "The ability to analyze, plan and proactively manage costs within the parameters or objectives of the company.",
+      "level": "Expert"
+    },
+    {
+      "competency": "Financial Management and Stewardship\n(Leadership and Finance Functional Competency)",
+      "kra": "Corporate Finance",
+      "definition": "The designing of the company's capital and funding structure, ensuring healthy balance sheet; as well as identification and evaluation of M&A opportunities together with the required capital funding.",
+      "level": "Expert"
+    },
+    {
+      "competency": "Financial Management and Stewardship\n(Leadership and Finance Functional Competency)",
+      "kra": "Risk, legal management and internal controls",
+      "definition": "The ability to understand, manage and control financial, legal, regulatory and other risks to which the organization might be exposed.",
+      "level": "Proficient"
+    },
+    {
+      "competency": "Accounting and reporting",
+      "kra": "Transactional accounting and closing processes",
+      "definition": "The ability to record revenues, costs and non-operating items using accurate accounts and profit/cost centers and following generally accepted accounting principles.",
+      "level": "Proficient"
+    },
+    {
+      "competency": "Accounting and reporting",
+      "kra": "Operations and Management reporting",
+      "definition": "The ability to prepare, deliver and discuss reports on the company's operations and financial condition, to enable management decision making.",
+      "level": "Expert"
+    },
+    {
+      "competency": "Accounting and reporting",
+      "kra": "Regulatory compliance and reporting",
+      "definition": "The supervision and management of tax-related transactions, recording and external reporting.",
+      "level": "Proficient"
+    },
+    {
+      "competency": "Accounting and reporting",
+      "kra": "System Management",
+      "definition": "Creation and management of an accounting system, including digital, based on understanding the interrelationships between the various component and systems including workflow of data through the systems.",
+      "level": "Expert"
+    },
+    {
+      "competency": "Treasury",
+      "kra": "Cash Management",
+      "definition": "Determining the company's cash needs to optimise cash balances, while managing client, employee, supplier and investor needs to determine the optimal working capital levels.",
+      "level": "Expert"
+    }
+  ],
+  "Finance Assistant": [
+    {
+      "competency": "Financial Management and Stewardship\n(Leadership and Finance Functional Competency)",
+      "kra": "Planning, forecasting and budgeting",
+      "definition": "The ability to translate business strategies into a financial plan, to include defining the right strategies for price, direct and indirect costs, and capital investments.",
+      "level": "Basic"
+    },
+    {
+      "competency": "Financial Management and Stewardship\n(Leadership and Finance Functional Competency)",
+      "kra": "Financial Analysis and Performance Management",
+      "definition": "The ability to analyze financial statements to generate insights about how to manage the financial results of the company:  revenue, profitability and shareholder returns.",
+      "level": "Basic"
+    },
+    {
+      "competency": "Financial Management and Stewardship\n(Leadership and Finance Functional Competency)",
+      "kra": "Cost management",
+      "definition": "The ability to analyze, plan and proactively manage costs within the parameters or objectives of the company.",
+      "level": "Basic"
+    },
+    {
+      "competency": "Financial Management and Stewardship\n(Leadership and Finance Functional Competency)",
+      "kra": "Corporate Finance",
+      "definition": "The designing of the company's capital and funding structure, ensuring healthy balance sheet; as well as identification and evaluation of M&A opportunities together with the required capital funding.",
+      "level": "Basic"
+    },
+    {
+      "competency": "Financial Management and Stewardship\n(Leadership and Finance Functional Competency)",
+      "kra": "Risk, legal management and internal controls",
+      "definition": "The ability to understand, manage and control financial, legal, regulatory and other risks to which the organization might be exposed.",
+      "level": "Basic"
+    },
+    {
+      "competency": "Accounting and reporting",
+      "kra": "Transactional accounting and closing processes",
+      "definition": "The ability to record revenues, costs and non-operating items using accurate accounts and profit/cost centers and following generally accepted accounting principles.",
+      "level": "Basic"
+    },
+    {
+      "competency": "Accounting and reporting",
+      "kra": "Operations and Management reporting",
+      "definition": "The ability to prepare, deliver and discuss reports on the company's operations and financial condition, to enable management decision making.",
+      "level": "Basic"
+    },
+    {
+      "competency": "Accounting and reporting",
+      "kra": "Regulatory compliance and reporting",
+      "definition": "The supervision and management of tax-related transactions, recording and external reporting.",
+      "level": "Basic"
+    },
+    {
+      "competency": "Accounting and reporting",
+      "kra": "System Management",
+      "definition": "Creation and management of an accounting system, including digital, based on understanding the interrelationships between the various component and systems including workflow of data through the systems.",
+      "level": "Basic"
+    },
+    {
+      "competency": "Treasury",
+      "kra": "Cash Management",
+      "definition": "Determining the company's cash needs to optimise cash balances, while managing client, employee, supplier and investor needs to determine the optimal working capital levels.",
+      "level": "Basic"
+    }
+  ],
+  "Marketing Analyst": [
+    {
+      "competency": "Deep Consumer Connection, Insighting and Foresight",
+      "kra": "Consumer Deep Dive",
+      "definition": "The ability to get connected and draw out information from consumers either directly or indirectly.  Knowing how to \"get into his skin and soul\".",
+      "level": "Basic"
+    },
+    {
+      "competency": "Deep Consumer Connection, Insighting and Foresight",
+      "kra": "Sharp Consumer Insighting",
+      "definition": "Knowledge of the definition and process by which insights are generated.",
+      "level": "Basic"
+    },
+    {
+      "competency": "Deep Consumer Connection, Insighting and Foresight",
+      "kra": "Consumer and Market Opporunity Mapping",
+      "definition": "Assessesment and interpretation of market research and Identifies, prioritizes and defines the key opportunity spaces available to drive business growth.",
+      "level": "Basic"
+    },
+    {
+      "competency": "Brand Strategy Development",
+      "kra": "Core Proposition and Concept Development",
+      "definition": "The ability to craft concept routes and a final core proposition that are relevant, compelling, differentiated, credible and business-building.",
+      "level": "Basic"
+    },
+    {
+      "competency": "Brand Strategy Development",
+      "kra": "Brand Strategy Development",
+      "definition": "Ability to develop a comprehensive Brand Identity System and Marketing Plan, ensureing that all strategic decisions and marketing programs aligned to this strategy\u2014even across multiple brands and products",
+      "level": "Basic"
+    },
+    {
+      "competency": "Brand Strategy Development",
+      "kra": "Business Strategy Development",
+      "definition": "The ability to develop both long and short term business strategy and understands how the brand strategy will serve the business strategy",
+      "level": "Basic"
+    },
+    {
+      "competency": "Marketing Mix Strategy Development",
+      "kra": "Communication Strategy Development",
+      "definition": "The ability to translate the Brand Strategy into a key component of implementation:  Communications Strategy.",
+      "level": "Basic"
+    },
+    {
+      "competency": "Marketing Mix Strategy Development",
+      "kra": "Customer Journey and Experience",
+      "definition": "The ability to put oneself in the shoes and perspective of the target customer and map out its journey to purchase or availment of product or service in order to put develop a relevant, business building,  and actionable marketing plan",
+      "level": "Basic"
+    },
+    {
+      "competency": "Marketing Mix Strategy Development",
+      "kra": "Digital Strategy Development",
+      "definition": "Being knowledgeable on the current and evolving digital touch points and influences (e.g. social media, website, mobile).  Knows how to best leverage digital platforms to achieve the business and marketing objectives, and translating it into a solid Digital Communications Plan.",
+      "level": "Basic"
+    },
+    {
+      "competency": "Marketing Mix Strategy Development",
+      "kra": "Innovation Strategy Development",
+      "definition": "Ability to translate insights and deep understanding about the market, consumer, competition and trends into creative and exploratory innovation concepts.  Having an out-of-the box mindset to encourage innovative thinking. Knowledgeable about the innovation process and is able to discern the potential of innovation concepts based on consumer and market understanding.",
+      "level": "Basic"
+    }
+  ],
+  "People & Culture Manager": [
+    {
+      "competency": "Talent Management and HR Expertise",
+      "kra": "Talent Acquisition",
+      "definition": "Attracting, identifying, screening, shortlisting, and interviewing suitable candidates for job openings.\n\nEnsuring to have the right people at the right seats to deliver RVA.",
+      "level": "Proficient"
+    },
+    {
+      "competency": "Talent Management and HR Expertise",
+      "kra": "Talent Onboarding and Enablement",
+      "definition": "Ensuring the new talents acquire the necessary knowledge, skills, and behaviors in order to become effective contributors to the organization. \n\nEnsuring clarity and alignment between the employee and the supervisor in terms of goals, objectives, and role expectations.",
+      "level": "Proficient"
+    },
+    {
+      "competency": "Talent Management and HR Expertise",
+      "kra": "Talent Engagement",
+      "definition": "Developing the workplace conditon and culture for all talents in alignment with the compay goals and values. Motivating team members to contribute to the success, and enhancing sense of the team well-being.",
+      "level": "Expert / Proficient"
+    },
+    {
+      "competency": "Talent Management and HR Expertise",
+      "kra": "Talent Development",
+      "definition": "Creating a challenging and dynamic learning environment where the talents grow and thrive.\n\nEnhancing a talent's skills, knowledge, behavior and competency, resulting in better performance.",
+      "level": "Proficient"
+    },
+    {
+      "competency": "Talent Management and HR Expertise",
+      "kra": "Performance Management",
+      "definition": "Ensuring that activities and output of the talents meets the organization's goals in an effective and efficient manner. Focus on monitoring and evaluating the performance of a talent versus the agreed measures of success.",
+      "level": "Proficient"
+    },
+    {
+      "competency": "Talent Management and HR Expertise",
+      "kra": "Total Rewards Management",
+      "definition": "Providing monetary and non-monetary programs and rewards to talents who achieve business goals resulting to  personal growth inside a motivated work environment.",
+      "level": "Proficient"
+    },
+    {
+      "competency": "Talent Management and HR Expertise",
+      "kra": "HR Services",
+      "definition": "Providing administrative support and addressing the clerical needs of the talents. Ensuring good experience and enabling effective and efficient ways of working to allow talents to focus on delivering RVA.",
+      "level": "Expert / Proficient"
+    },
+    {
+      "competency": "Talent Management and HR Expertise",
+      "kra": "Employee and Labor Relations",
+      "definition": "Able to create a fair workplace providing an link between talents and management, helping address work-related concerns, developing policies and protecting the rights of both parties.",
+      "level": "Proficient"
+    }
+  ],
+  "Multimedia Designer": [
+    {
+      "competency": "Visual Content and Communications  Design",
+      "kra": "Design Strategy and Conceptualization",
+      "definition": "Understands written context and concepts, identifies key information and integrates these into a visual concept/strategy/framework",
+      "level": "Basic"
+    },
+    {
+      "competency": "Visual Content and Communications  Design",
+      "kra": "Visual Execution/ Translation",
+      "definition": "Understands executional briefing instructions and translates these into design executions with an attention to detail that adhere to design guidelines",
+      "level": "Intermediate"
+    },
+    {
+      "competency": "Visual Content and Communications  Design",
+      "kra": "Visual Communications Systems and Tools Expertise",
+      "definition": "has a deep awareness and understanding of the different tools and systems that are relevant to the visualization needs of the organization",
+      "level": "Intermediate"
+    }
+  ]
+};
+
 // ---- DATA MODEL: now keyed by ROLE. Each role has its own question set. ----
-// Placeholder roles for now — swap in real Project Y content (or a DB fetch) later.
 // Role list below is per the Project Y org roster. The roster listed "Associate" three
 // times with no department/team given to tell them apart, and role names double as the
 // keys of this object, so duplicates would just overwrite each other — only one generic
@@ -199,21 +674,21 @@ const ROLE_NAMES = [
   "People & Culture Manager"
 ];
 
+// labels shown/printed for each Part 1 row — KRA is picked from KRA_LIBRARY, everything
+// else (including KPI) is free-text user input
+const PART1_FIELDS = [
+  ["Key Result Area (KRA)", "kraText"],
+  ["Key Performance Indicator (KPI)", "kpi"],
+  ["% of Target", "tgt"],
+  ["Milestones / Projects", "mile"],
+  ["Critical Competencies to Develop", "comp"]
+];
+
 function makeRolePlaceholder(roleName) {
   return {
     "PART 1: GOALS / KRA / KPI": {
-      refFields: [
-        ["Key Result Area (KRA) & KPI", "kra"],
-        ["% of Target", "tgt"],
-        ["Milestones / Projects", "mile"],
-        ["Critical Competencies to Develop", "comp"]
-      ],
-      rows: [
-        { kra:"[" + roleName + "] KRA placeholder 1\nKPI: placeholder KPI text", tgt:"25%",
-          mile:"Milestone placeholder 1", comp:"Competency placeholder 1" },
-        { kra:"[" + roleName + "] KRA placeholder 2\nKPI: placeholder KPI text", tgt:"30%",
-          mile:"Milestone placeholder 2", comp:"Competency placeholder 2" }
-      ]
+      refFields: PART1_FIELDS,
+      kraOptions: KRA_LIBRARY[roleName] || []
     },
     "PART 2: COMPETENCIES": {
       refFields: [
@@ -255,33 +730,61 @@ Object.keys(ROLES).forEach(roleName => {
   roleSelect.appendChild(opt);
 });
 
-// ---- Custom KRA/KPI rows added by the employee, kept per role ----
-let customRows = [];   // each: {kra, tgt, mile, comp} — matches Part 1 refFields
+// ---- PART 1 rows: each row lets the employee pick a KRA (from that role's KRA_LIBRARY
+// options) and type in the KPI, milestones, competencies and % of Target as free text. ----
+let part1Rows = [];   // each: {kra, kraOther, kpi, tgt, mile, comp}
+function blankPart1Row() { return { kra: "", kraOther: "", kpi: "", tgt: "", mile: "", comp: "" }; }
 
-function addCustomRow() {
-  customRows.push({ kra: "", tgt: "", mile: "", comp: "" });
+function addPart1Row() {
+  part1Rows.push(blankPart1Row());
   renderRole(true);    // re-render, preserving existing inputs
 }
-function removeCustomRow(i) {
-  saveCustomInputs();
-  customRows.splice(i, 1);
+function removePart1Row(i) {
+  savePart1Inputs();
+  part1Rows.splice(i, 1);
   renderRole(true);
 }
-// read what the user has typed into custom fields back into the store,
-// so a re-render (add/remove) doesn't wipe their entries
-function saveCustomInputs() {
-  customRows.forEach((row, i) => {
-    ["kra", "tgt", "mile", "comp"].forEach(k => {
-      const el = document.getElementById(`custom_${i}_${k}`);
+// read what the user has typed/selected in Part 1 fields back into the store,
+// so a re-render (add/remove/KRA change) doesn't wipe their entries
+function savePart1Inputs() {
+  part1Rows.forEach((row, i) => {
+    ["kra", "kraOther", "kpi", "tgt", "mile", "comp"].forEach(k => {
+      const el = document.getElementById(`kra_${i}_${k}`);
       if (el) row[k] = el.value;
     });
   });
 }
+// called when a row's KRA dropdown changes — re-renders so the "Other" text box
+// can appear/disappear, without losing anything else on the form
+function onKraChange(i) {
+  savePart1Inputs();
+  renderRole(true);
+}
+function kraDisplayText(row) {
+  return row.kra === "__other__" ? (row.kraOther || "") : (row.kra || "");
+}
+
+// ---- snapshot/restore all form field values across a re-render, so switching a KRA
+// dropdown or adding/removing a row doesn't wipe ratings/comments elsewhere on the form ----
+function snapshotFormState() {
+  const state = {};
+  document.querySelectorAll("#parts select, #parts textarea, #parts input").forEach(el => {
+    if (el.id) state[el.id] = el.value;
+  });
+  return state;
+}
+function restoreFormState(state) {
+  Object.entries(state).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  });
+}
 
 // ---- RENDER: rebuild the form for the currently selected role ----
-function renderRole(keepCustom) {
-  // if switching roles (not just adding a row), clear custom rows
-  if (!keepCustom) customRows = [];
+function renderRole(keepAll) {
+  const priorState = keepAll ? snapshotFormState() : null;
+  // if switching roles (not just adding/editing a row), start Part 1 fresh
+  if (!keepAll) part1Rows = [blankPart1Row()];
 
   const container = document.getElementById("parts");
   container.innerHTML = "";
@@ -299,19 +802,81 @@ function renderRole(keepCustom) {
     title.textContent = partName;
     container.appendChild(title);
 
+    if (partName === "PART 1: GOALS / KRA / KPI") {
+      // ---- KRA/KPI rows: KRA is a dropdown of this role's competency-model options ----
+      part1Rows.forEach((row, i) => {
+        const wrap = document.createElement("div");
+        wrap.className = "row";
+
+        const kraOpts = part.kraOptions.map(opt =>
+          `<option value="${opt.kra}" ${row.kra === opt.kra ? "selected" : ""}>${opt.kra}</option>`
+        ).join("");
+        const selected = part.kraOptions.find(opt => opt.kra === row.kra);
+
+        const ref = document.createElement("div");
+        ref.className = "row-ref custom-ref";
+        ref.innerHTML = `
+          <div class="rownum">Item ${i + 1}
+            <button class="remove-btn" onclick="removePart1Row(${i})">✕ remove</button>
+          </div>
+          <div class="field"><label>Key Result Area (KRA)</label>
+            <select id="kra_${i}_kra" onchange="onKraChange(${i})">
+              <option value="">— Select KRA —</option>
+              ${kraOpts}
+              <option value="__other__" ${row.kra === "__other__" ? "selected" : ""}>Other (specify)</option>
+            </select>
+            ${selected ? `<div class="kra-hint">
+              <div class="kra-hint-top">${selected.competency ? selected.competency + " · " : ""}Target proficiency: ${selected.level}</div>
+              ${selected.definition ? `<div class="kra-hint-def">${selected.definition}</div>` : ""}
+            </div>` : ""}
+            ${row.kra === "__other__" ? `<input id="kra_${i}_kraOther" value="${row.kraOther || ""}" placeholder="Type the KRA...">` : ""}
+          </div>
+          <div class="field"><label>Key Performance Indicator (KPI)</label>
+            <textarea id="kra_${i}_kpi" placeholder="Define the measurable KPI for this KRA...">${row.kpi || ""}</textarea></div>
+          <div class="field"><label>% of Target</label>
+            <input class="tgt-input" id="kra_${i}_tgt" value="${row.tgt || ""}" placeholder="e.g. 25%"
+              oninput="updateWeightTotal()"></div>
+          <div class="field"><label>Milestones / Projects</label>
+            <textarea id="kra_${i}_mile" placeholder="Milestones...">${row.mile || ""}</textarea></div>
+          <div class="field"><label>Critical Competencies to Develop</label>
+            <textarea id="kra_${i}_comp" placeholder="Competencies...">${row.comp || ""}</textarea></div>`;
+
+        const id = `p${pIdx}_r${i}`;
+        const options = RATINGS.map(r =>
+          `<option value="${r}">${r || "— Select rating —"}</option>`).join("");
+        const input = document.createElement("div");
+        input.className = "row-input";
+        input.innerHTML = `
+          <div><label>Individual Rating</label>
+            <select id="${id}_rate">${options}</select></div>
+          <div><label>Individual Comments</label>
+            <textarea id="${id}_cmt" placeholder="Your comments..."></textarea></div>`;
+
+        wrap.appendChild(ref);
+        wrap.appendChild(input);
+        container.appendChild(wrap);
+      });
+
+      const addBtn = document.createElement("button");
+      addBtn.className = "add-btn";
+      addBtn.textContent = "+ Add KRA / KPI";
+      addBtn.onclick = () => { savePart1Inputs(); addPart1Row(); };
+      container.appendChild(addBtn);
+
+      const totalEl = document.createElement("div");
+      totalEl.id = "weightTotal";
+      totalEl.className = "weight-total";
+      container.appendChild(totalEl);
+      return;
+    }
+
     part.rows.forEach((row, rIdx) => {
       const wrap = document.createElement("div");
       wrap.className = "row";
       let refHTML = `<div class="rownum">Item ${rIdx + 1}</div>`;
       part.refFields.forEach(([label, key]) => {
-        if (partName === "PART 1: GOALS / KRA / KPI" && key === "tgt") {
-          refHTML += `<div class="field"><label>${label}</label>
-            <input class="tgt-input" id="kra_wt_${rIdx}" value="${row[key] || ""}"
-              placeholder="e.g. 25%" oninput="updateWeightTotal()"></div>`;
-        } else {
-          refHTML += `<div class="field"><label>${label}</label>
-            <div class="val">${row[key] || "—"}</div></div>`;
-        }
+        refHTML += `<div class="field"><label>${label}</label>
+          <div class="val">${row[key] || "—"}</div></div>`;
       });
       const ref = document.createElement("div");
       ref.className = "row-ref";
@@ -331,58 +896,9 @@ function renderRole(keepCustom) {
       wrap.appendChild(input);
       container.appendChild(wrap);
     });
-
-    // ---- after Part 1: render any custom KRA/KPI rows + the Add button ----
-    if (partName === "PART 1: GOALS / KRA / KPI") {
-      customRows.forEach((crow, i) => {
-        const wrap = document.createElement("div");
-        wrap.className = "row";
-
-        const ref = document.createElement("div");
-        ref.className = "row-ref custom-ref";
-        ref.innerHTML = `
-          <div class="rownum">Custom Item ${i + 1}
-            <button class="remove-btn" onclick="removeCustomRow(${i})">✕ remove</button>
-          </div>
-          <div class="field"><label>Key Result Area (KRA) &amp; KPI</label>
-            <textarea id="custom_${i}_kra" placeholder="Describe the KRA and its KPI(s)...">${crow.kra || ""}</textarea></div>
-          <div class="field"><label>% of Target</label>
-            <input class="tgt-input" id="custom_${i}_tgt" value="${crow.tgt || ""}" placeholder="e.g. 10%"
-              oninput="updateWeightTotal()"></div>
-          <div class="field"><label>Milestones / Projects</label>
-            <textarea id="custom_${i}_mile" placeholder="Milestones...">${crow.mile || ""}</textarea></div>
-          <div class="field"><label>Critical Competencies to Develop</label>
-            <textarea id="custom_${i}_comp" placeholder="Competencies...">${crow.comp || ""}</textarea></div>`;
-
-        const id = `custom_p0_r${i}`;
-        const options = RATINGS.map(r =>
-          `<option value="${r}">${r || "— Select rating —"}</option>`).join("");
-        const input = document.createElement("div");
-        input.className = "row-input";
-        input.innerHTML = `
-          <div><label>Individual Rating</label>
-            <select id="${id}_rate">${options}</select></div>
-          <div><label>Individual Comments</label>
-            <textarea id="${id}_cmt" placeholder="Your comments..."></textarea></div>`;
-
-        wrap.appendChild(ref);
-        wrap.appendChild(input);
-        container.appendChild(wrap);
-      });
-
-      const addBtn = document.createElement("button");
-      addBtn.className = "add-btn";
-      addBtn.textContent = "+ Add custom KRA / KPI";
-      addBtn.onclick = () => { saveCustomInputs(); addCustomRow(); };
-      container.appendChild(addBtn);
-
-      const totalEl = document.createElement("div");
-      totalEl.id = "weightTotal";
-      totalEl.className = "weight-total";
-      container.appendChild(totalEl);
-    }
   });
 
+  if (priorState) restoreFormState(priorState);
   updateWeightTotal();
 }
 
@@ -392,15 +908,9 @@ function parseWeight(v) {
   return isNaN(n) ? 0 : n;
 }
 function sumPart1Weights() {
-  const roleName = roleSelect.value;
-  if (!roleName) return 0;
   let total = 0;
-  ROLES[roleName]["PART 1: GOALS / KRA / KPI"].rows.forEach((row, rIdx) => {
-    const el = document.getElementById(`kra_wt_${rIdx}`);
-    if (el) total += parseWeight(el.value);
-  });
-  customRows.forEach((crow, i) => {
-    const el = document.getElementById(`custom_${i}_tgt`);
+  part1Rows.forEach((row, i) => {
+    const el = document.getElementById(`kra_${i}_tgt`);
     if (el) total += parseWeight(el.value);
   });
   return Math.round(total * 100) / 100;   // trim floating-point noise
@@ -455,7 +965,7 @@ async function collect() {
     return;
   }
 
-  saveCustomInputs();   // capture latest custom field text
+  savePart1Inputs();   // capture latest KRA/KPI field text
 
   const weightTotal = sumPart1Weights();
   if (weightTotal !== 100) {
@@ -467,37 +977,32 @@ async function collect() {
   const DATA = ROLES[roleName];
   const out = [];
   Object.entries(DATA).forEach(([partName, part], pIdx) => {
+    if (partName === "PART 1: GOALS / KRA / KPI") {
+      part1Rows.forEach((row, i) => {
+        const id = `p${pIdx}_r${i}`;
+        out.push({
+          part: partName,
+          item: i + 1,
+          rating: document.getElementById(`${id}_rate`).value,
+          comment: document.getElementById(`${id}_cmt`).value,
+          ref: { ...row, kraText: kraDisplayText(row) },
+          refFields: part.refFields
+        });
+      });
+      return;
+    }
+
     part.rows.forEach((row, rIdx) => {
       const id = `p${pIdx}_r${rIdx}`;
-      let ref = row;
-      if (partName === "PART 1: GOALS / KRA / KPI") {
-        const wtEl = document.getElementById(`kra_wt_${rIdx}`);
-        ref = { ...row, tgt: wtEl ? wtEl.value : row.tgt };
-      }
       out.push({
         part: partName,
         item: rIdx + 1,
         rating: document.getElementById(`${id}_rate`).value,
         comment: document.getElementById(`${id}_cmt`).value,
-        ref: ref,
+        ref: row,
         refFields: part.refFields
       });
     });
-
-    // append custom KRA/KPI rows right after Part 1
-    if (partName === "PART 1: GOALS / KRA / KPI") {
-      customRows.forEach((crow, i) => {
-        const id = `custom_p0_r${i}`;
-        out.push({
-          part: partName,
-          item: `Custom ${i + 1}`,
-          rating: document.getElementById(`${id}_rate`).value,
-          comment: document.getElementById(`${id}_cmt`).value,
-          ref: crow,
-          refFields: part.refFields   // same 4 labels: kra, tgt, mile, comp
-        });
-      });
-    }
   });
 
   const btn = document.getElementById("saveBtn");
